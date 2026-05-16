@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PhotoCamera
@@ -12,16 +14,23 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 
+import com.example.capskin.model.Post
+import com.example.capskin.model.PostRepository
+import java.util.UUID
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreatePostScreen(navController: NavHostController, melanin: Float?, skinType: String?) {
+fun CreatePostScreen(navController: NavHostController, melanin: Float?, hemoglobin: Float?, skinType: String?) {
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     Scaffold(
         topBar = {
@@ -34,7 +43,23 @@ fun CreatePostScreen(navController: NavHostController, melanin: Float?, skinType
                 },
                 actions = {
                     TextButton(
-                        onClick = { navController.popBackStack() },
+                        onClick = { 
+                            val newPost = Post(
+                                id = UUID.randomUUID().toString(),
+                                title = title,
+                                content = content,
+                                author = "사용자",
+                                time = "방금 전",
+                                likes = 0,
+                                dislikes = 0,
+                                melaninLevel = melanin,
+                                hemoglobinLevel = hemoglobin,
+                                skinType = skinType,
+                                imageUrl = if (melanin != null) "attached_image" else null // Simulation
+                            )
+                            PostRepository.addPost(newPost)
+                            navController.popBackStack() 
+                        },
                         enabled = title.isNotBlank() && content.isNotBlank()
                     ) {
                         Text("완료", fontWeight = FontWeight.Bold)
@@ -50,7 +75,7 @@ fun CreatePostScreen(navController: NavHostController, melanin: Float?, skinType
                 .padding(16.dp)
         ) {
             // Attached Analysis Info
-            if (melanin != null || skinType != null) {
+            if (melanin != null || hemoglobin != null || skinType != null) {
                 Surface(
                     color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
                     shape = RoundedCornerShape(12.dp),
@@ -69,7 +94,7 @@ fun CreatePostScreen(navController: NavHostController, melanin: Float?, skinType
                         Column {
                             Text("분석 결과가 첨부되었습니다", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             Text(
-                                "피부 타입: $skinType | 멜라닌: ${(melanin ?: 0f * 100).toInt()}%",
+                                "피부 타입: ${skinType ?: "미지정"} | 멜라닌: ${((melanin ?: 0f) * 100).toInt()}% | 헤모글로빈: ${((hemoglobin ?: 0f) * 100).toInt()}%",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
@@ -85,11 +110,14 @@ fun CreatePostScreen(navController: NavHostController, melanin: Float?, skinType
                 placeholder = { Text("제목을 입력하세요", fontSize = 18.sp, fontWeight = FontWeight.Bold) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
-                    containerColor = Color.Transparent,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 ),
-                textStyle = LocalTextStyle.current.copy(fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                textStyle = LocalTextStyle.current.copy(fontSize = 18.sp, fontWeight = FontWeight.Bold),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { /* Focus move is automatic for Next */ })
             )
             
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -102,10 +130,13 @@ fun CreatePostScreen(navController: NavHostController, melanin: Float?, skinType
                     .fillMaxWidth()
                     .weight(1f),
                 colors = TextFieldDefaults.colors(
-                    containerColor = Color.Transparent,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
-                )
+                ),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() })
             )
             
             // Photo attachment button (Simulated)

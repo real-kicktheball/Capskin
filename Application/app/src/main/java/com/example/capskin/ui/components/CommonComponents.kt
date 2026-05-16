@@ -13,6 +13,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Camera
+import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.runtime.getValue
@@ -53,6 +54,16 @@ fun BottomNavigationBar(navController: NavHostController) {
             onClick = {
                 if (currentDestination != Screen.History.route) {
                     navController.navigate(Screen.History.route)
+                }
+            }
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.Forum, contentDescription = null) },
+            label = { Text("커뮤니티") },
+            selected = currentDestination == Screen.Community.route,
+            onClick = {
+                if (currentDestination != Screen.Community.route) {
+                    navController.navigate(Screen.Community.route)
                 }
             }
         )

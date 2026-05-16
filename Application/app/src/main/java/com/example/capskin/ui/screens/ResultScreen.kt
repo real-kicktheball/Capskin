@@ -54,7 +54,26 @@ fun ResultScreen(navController: NavHostController) {
         }
 
         Spacer(modifier = Modifier.weight(1f))
+        
         Button(
+            onClick = { 
+                navController.navigate(
+                    Screen.CreatePost.createRoute(
+                        result.melaninLevel,
+                        result.hemoglobinLevel,
+                        result.skinType
+                    )
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+        ) {
+            Text("분석 결과 커뮤니티에 공유하기")
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        OutlinedButton(
             onClick = { navController.navigate(Screen.Home.route) },
             modifier = Modifier.fillMaxWidth()
         ) {

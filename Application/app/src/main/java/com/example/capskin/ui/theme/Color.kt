@@ -2,10 +2,15 @@ package com.example.capskin.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+// Skin Analysis / Beauty Theme Colors
+val SkinPrimary = Color(0xFFE91E63) // Vibrant Rose
+val SkinSecondary = Color(0xFFFF8A80) // Soft Coral
+val SkinTertiary = Color(0xFFF06292) // Light Rose
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+val BackgroundLight = Color(0xFFFFFBFE)
+val SurfaceLight = Color(0xFFFFFBFE)
+
+// Dark Theme Colors
+val SkinPrimaryDark = Color(0xFFFFB1C1)
+val SkinSecondaryDark = Color(0xFFFFB4AB)
+val SkinTertiaryDark = Color(0xFFFFB2BE)
