@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+python-multipart
+jinja2
+numpy
+pillow
+torch
+torchvision
+einops
+mediapipe
+opencv-python
+matplotlib
+scipy
+python-dotenv
