@@ -1,6 +1,8 @@
 import cv2
 import mediapipe as mp
 import numpy as np
+from pathlib import Path
+_HERE = Path(__file__).resolve().parent
 
 BaseOptions = mp.tasks.BaseOptions
 FaceLandmarker = mp.tasks.vision.FaceLandmarker
@@ -20,7 +22,7 @@ RIGHT_EYEBROW = [46, 52, 53, 55, 63, 65, 66, 70, 105, 107]
 LEFT_EYEBROW  = [276, 282, 283, 285, 293, 295, 296, 300, 334, 336]
 
 
-def get_landmarks(image_rgb, model_path="face_landmarker.task"):
+def get_landmarks(image_rgb, model_path="ai/face_landmarker.task"):
     H, W = image_rgb.shape[:2]
 
     options = FaceLandmarkerOptions(
@@ -74,7 +76,7 @@ def remove_facial_features(mask, coords):
     return mask
 
 
-def get_hair_mask(image_rgb, model_path="hair_segmenter.tflite"):
+def get_hair_mask(image_rgb, model_path="ai/hair_segmenter.tflite"):
     ImageSegmenter = mp.tasks.vision.ImageSegmenter
     ImageSegmenterOptions = mp.tasks.vision.ImageSegmenterOptions
     options = ImageSegmenterOptions(
