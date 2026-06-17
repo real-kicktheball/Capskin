@@ -65,6 +65,10 @@ Output: 얼굴 히트맵 리포트, 맞춤형 제품 추천 및 루틴 가이드
 
 의료/산업 확장성: 분광 분석 기술이 수술 영상 분석, 의료, 식품 분야로 확대됨에 따라 뷰티 분야 적용의 타당성을 뒷받침합니다.
 
+
+https://github.com/user-attachments/assets/0ba39103-081a-48f8-b460-4254fa087cf9
+
+
 👤 Author
 Name: chanhu (University Student, 4th Year)
 
