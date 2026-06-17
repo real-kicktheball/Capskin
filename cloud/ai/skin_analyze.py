@@ -2,7 +2,7 @@ import io
 import base64
 import numpy as np
 from PIL import Image
-
+import cv2
 WL = np.array([400 + 10 * i for i in range(31)], dtype=np.float32)
 
 ZMIN = 0.5
@@ -35,28 +35,36 @@ _E_PINV = np.linalg.pinv(_E)  # (5 x 31)
 
 def _absorbance(cube: np.ndarray) -> np.ndarray:
     """반사율 cube → 흡광도. cube shape: (31, H, W), 값 범위 [0, 1]"""
-    R = np.clip(cube, 1e-4, None)
+    R = np.clip(cube, 1e-4, 1.0)
     return -np.log10(R)
 
+def _regress_out(index, lum, deg=2):
+    """index에서 밝기(lum)로 설명되는 성분을 빼고 잔차만 남긴다."""
+    x = lum.ravel().astype(np.float64)
+    y = index.ravel().astype(np.float64)
+    p = np.polyfit(x, y, deg)
+    return (index - np.polyval(p, lum)).astype(np.float32)
 
 def compute_indices(cube: np.ndarray):
     """
-    Beer-Lambert 다중회귀 언믹싱.
+    Beer-Lambert 다중회귀 언믹싱 + 밝기 회귀 제거.
     cube: (31, H, W), 반사율 [0, 1]
     반환: melanin (H, W), hemoglobin (H, W)
     """
-    # MST++ 출력이 (H, W, 31)이면 transpose 필요
     if cube.ndim == 3 and cube.shape[2] == 31:
         cube = cube.transpose(2, 0, 1)  # → (31, H, W)
 
-    A = _absorbance(cube)               # (31, H, W)
+    A = _absorbance(cube)
     bands, H, W = A.shape
-    coeff = _E_PINV @ A.reshape(bands, -1)  # (5, H*W)
+    coeff = _E_PINV @ A.reshape(bands, -1)
     coeff = coeff.reshape(5, H, W)
 
-    melanin   = coeff[0]                                            # a_m
-    hemoglobin = np.clip(coeff[1], 0, None) + np.clip(coeff[2], 0, None)  # a_ob + a_db
+    melanin    = coeff[0]
+    hemoglobin = np.clip(coeff[1], 0, None) + np.clip(coeff[2], 0, None)
 
+    lum = np.clip(cube, 1e-4, 1.0).mean(axis=0)   # 밝기 대용(큐브 평균 반사율)
+    melanin    = _regress_out(melanin, lum)
+    hemoglobin = _regress_out(hemoglobin, lum)
     return melanin, hemoglobin
 
 
@@ -107,10 +115,45 @@ def analyze(cube: np.ndarray, masks: dict, image_np: np.ndarray) -> dict:
     if not filled.any():
         return {"melanin_map": None, "hemoglobin_map": None}
 
-    mel_overlay = _overlay(image_np, mel_z, filled, (40, 110, 210), (110, 60, 20))
+    mel_overlay = _overlay(image_np, mel_z, filled, (40, 110, 210), (40, 110, 210))
     hb_overlay  = _overlay(image_np, hb_z,  filled, (40, 110, 210), (210, 20, 40))
 
     return {
         "melanin_map":   _to_b64_png(mel_overlay),
         "hemoglobin_map": _to_b64_png(hb_overlay),
     }
+
+def compute_zone_stats(cube, masks, threshold: float = ZMIN) -> dict:
+    """
+    존별로 '그려지는 기준(z > threshold)'을 넘는 픽셀의 면적 비율을 계산.
+    Gemini에 넘길 구조화 데이터. 절대값/평균이 아니라 존 자기 평균 대비 상대 비율.
+    threshold 기본값은 그리는 기준과 동일한 ZMIN(0.5). 더 엄격히 세고 싶으면 2.0 등으로.
+    얼굴 미검출(masks=None)이면 None 반환.
+    """
+    if masks is None:
+        return None
+
+    melanin, hemoglobin = compute_indices(cube)
+    mel_z, _ = _zscore_by_zone(melanin, masks)
+    hb_z,  _ = _zscore_by_zone(hemoglobin, masks)
+
+    mel_hit = mel_z > threshold
+    hb_hit  = hb_z > threshold
+
+    stats = {}
+    for name, m in masks.items():
+        mask = m.astype(bool)
+        total = int(mask.sum())
+        if total == 0:
+            stats[name] = {"melanin_pct": 0.0, "hemoglobin_pct": 0.0, "both_pct": 0.0, "area_px": 0}
+            continue
+        mel  = int((mel_hit & mask).sum())
+        hb   = int((hb_hit  & mask).sum())
+        both = int((mel_hit & hb_hit & mask).sum())
+        stats[name] = {
+            "melanin_pct":    round(mel  / total * 100, 1),
+            "hemoglobin_pct": round(hb   / total * 100, 1),
+            "both_pct":       round(both / total * 100, 1),
+            "area_px":        total,
+        }
+    return stats

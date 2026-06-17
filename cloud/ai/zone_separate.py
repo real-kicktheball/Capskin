@@ -104,6 +104,7 @@ def make_zone_mask(coords, indices, H, W, image_rgb):
     mask = remove_facial_features(mask, coords)
     hair_mask = get_hair_mask(image_rgb)
     mask[hair_mask == 1] = 0
+    mask[detect_glare(image_rgb) == 1] = 0 
     return mask
 
 
@@ -129,7 +130,15 @@ def get_zone_masks(image):
         masks[name] = make_zone_mask(coords, indices, H, W, image)
     return masks
 
-
+def detect_glare(image_rgb, v_thresh=210, s_thresh=0.25):
+    rgb = image_rgb.astype(np.float32)
+    mx = rgb.max(axis=2)
+    mn = rgb.min(axis=2)
+    s = np.where(mx > 0, (mx - mn) / mx, 0.0)        # 채도
+    glare = ((mx >= v_thresh) & (s <= s_thresh)).astype(np.uint8)
+    glare = cv2.dilate(glare, np.ones((5, 5), np.uint8), iterations=1)  # 경계도 제외
+    return glare
+    
 if __name__ == "__main__":
     image_rgb = cv2.cvtColor(cv2.imread("face.jpg"), cv2.COLOR_BGR2RGB)
     H, W = image_rgb.shape[:2]
