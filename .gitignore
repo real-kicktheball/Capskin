@@ -1,0 +1,7 @@
+# 빌드 관련 폴더 제외
+/build
+.gradle
+.idea
+*.iml
+local.properties
+.DS_Store
